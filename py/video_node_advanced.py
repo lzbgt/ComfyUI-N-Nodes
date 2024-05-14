@@ -18,6 +18,7 @@ import time
 import concurrent.futures
 import skbuild
 import os
+from uuid import uuid4
 
 
 YELLOW = '\33[33m'
@@ -121,27 +122,36 @@ class LatentRebatch:
 
         return output_list
 
+ranstr = uuid4().hex
 
 input_dir = os.path.join(folder_paths.get_input_directory(), "n-suite")
 output_dir = os.path.join(
-    folder_paths.get_output_directory(), "n-suite", "frames_out")
+    folder_paths.get_output_directory(), "n-suite", ranstr, "frames_out")
 temp_output_dir = os.path.join(
-    folder_paths.get_temp_directory(), "n-suite", "frames_out")
+    folder_paths.get_temp_directory(), "n-suite", ranstr, "frames_out")
 frames_output_dir = os.path.join(
-    folder_paths.get_temp_directory(), "n-suite", "frames")
+    folder_paths.get_temp_directory(), "n-suite", ranstr, "frames")
 videos_output_dir = os.path.join(
-    folder_paths.get_output_directory(), "n-suite", "videos")
+    folder_paths.get_output_directory(),  "n-suite", ranstr, "videos")
 audios_output_temp_dir = os.path.join(
-    folder_paths.get_temp_directory(), "audio.mp3")
+    folder_paths.get_temp_directory(),  "n-suite", ranstr, "audio.mp3")
 videos_output_temp_dir = os.path.join(
-    folder_paths.get_temp_directory(), "video.mp4")
+    folder_paths.get_temp_directory(), "n-suite", ranstr,  "video.mp4")
 video_preview_output_temp_dir = os.path.join(
-    folder_paths.get_output_directory(), "n-suite", "videos")
+    folder_paths.get_output_directory(), "n-suite", ranstr, "videos")
 _resize_type = ["none", "width", "height"]
 _framerate = ["original", "half", "quarter"]
 _choice = ["Yes", "No"]
+
+_my_p1 = os.path.join(
+    folder_paths.get_temp_directory(), "n-suite", ranstr)
+_my_p2 = os.path.join(
+    folder_paths.get_output_directory(), "n-suite", ranstr)
+
 try:
-    os.makedirs(input_dir)
+    os.makedirs(_my_p1, exist_ok=True)
+    os.makedirs(_my_p2, exist_ok=True)
+    os.makedirs(input_dir, exist_ok=True)
 except:
     pass
 try:
@@ -404,6 +414,7 @@ class LoadVideoAdvanced:
 
         # Estract frames
         file_extension = os.path.splitext(file_path)[1].lower()
+        list_files = []
 
         if file_extension == ".mp4" or file_extension == ".webm":
             list_files = extract_frames_from_video(
@@ -415,7 +426,7 @@ class LoadVideoAdvanced:
                 audio_clip.write_audiofile(os.path.join(
                     temp_output_dir, video_path.split(".")[0], "audio.mp3"))
             except:
-                print("Could not save audio")
+                print(f"Could not save audio: {file_path}")
                 pass
         elif file_extension == ".gif":
             extract_frames_from_gif(file_path, output_dir)
@@ -423,7 +434,7 @@ class LoadVideoAdvanced:
             # create_gif_from_frames(output_dir, output_video2)
 
         else:
-            print("Format not supported. Please provide an MP4 or GIF file.")
+            print(f"Format not supported. Please provide an MP4 or GIF file. {file_path}")
 
         return list_files, fps
 
@@ -638,6 +649,8 @@ class SaveVideo:
             if outpath:
                 video_clip.write_videofile(self.video_file_path)
                 file_name = self.video_filename
+                
+                
             else:
                 # delete all temporary files that start with video_preview
                 for file in os.listdir(video_preview_output_temp_dir):
@@ -649,6 +662,10 @@ class SaveVideo:
                 file_name = f"video_preview_{suffix}.mp4"
                 video_clip.write_videofile(os.path.join(
                     video_preview_output_temp_dir, file_name))
+                
+            shutil.rmtree(_my_p2, ignore_errors=True)
+            shutil.rmtree(_my_p1, ignore_errors=True)
+
 
         return {"ui": {"text": [file_name], }}
 
