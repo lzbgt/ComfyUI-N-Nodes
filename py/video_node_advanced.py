@@ -564,7 +564,6 @@ class SaveVideo:
     @classmethod
     def INPUT_TYPES(s):
         try:
-            shutil.rmtree(frames_output_dir)
             os.mkdir(frames_output_dir)
         except:
             pass
@@ -604,7 +603,6 @@ class SaveVideo:
         results = list()
 
         for image in images:
-
             full_output_folder, file = get_output_filename(
                 "", frames_output_dir, ".png")
             file_name = file
