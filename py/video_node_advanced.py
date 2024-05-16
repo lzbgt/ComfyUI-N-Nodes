@@ -25,6 +25,26 @@ YELLOW = '\33[33m'
 END = '\33[0m'
 
 # Brutally copied from comfy_extras/nodes_rebatch.py and modified
+# folder_paths.get_output_directory()
+ranstr = uuid4().hex
+# folder_paths.get_output_directory()
+input_dir = os.path.join(folder_paths.get_input_directory(), "n-suite")
+output_dir = os.path.join(
+    folder_paths.get_output_directory(), "n-suite", ranstr, "frames_out")
+temp_output_dir = os.path.join(
+    folder_paths.get_temp_directory(), "n-suite", ranstr, "frames_out")
+frames_output_dir = os.path.join(
+    folder_paths.get_temp_directory(), "n-suite", ranstr, "frames")
+videos_output_dir = os.path.join(
+    folder_paths.get_output_directory(),  "n-suite", ranstr, "videos")
+audios_output_temp_dir = os.path.join(
+    folder_paths.get_temp_directory(),  "n-suite", ranstr, "audio.mp3")
+videos_output_temp_dir = os.path.join(
+    folder_paths.get_temp_directory(), "n-suite", ranstr,  "video.mp4")
+video_preview_output_temp_dir = os.path.join(
+    folder_paths.get_output_directory(), "n-suite", ranstr, "videos")
+_resize_type = ["none", "width", "height"]
+_framerate = ["original", "half", "quarter"]
 
 
 class LatentRebatch:
@@ -122,62 +142,34 @@ class LatentRebatch:
 
         return output_list
 
-ranstr = uuid4().hex
 
-input_dir = os.path.join(folder_paths.get_input_directory(), "n-suite")
-output_dir = os.path.join(
-    folder_paths.get_output_directory(), "n-suite", ranstr, "frames_out")
-temp_output_dir = os.path.join(
-    folder_paths.get_temp_directory(), "n-suite", ranstr, "frames_out")
-frames_output_dir = os.path.join(
-    folder_paths.get_temp_directory(), "n-suite", ranstr, "frames")
-videos_output_dir = os.path.join(
-    folder_paths.get_output_directory(),  "n-suite", ranstr, "videos")
-audios_output_temp_dir = os.path.join(
-    folder_paths.get_temp_directory(),  "n-suite", ranstr, "audio.mp3")
-videos_output_temp_dir = os.path.join(
-    folder_paths.get_temp_directory(), "n-suite", ranstr,  "video.mp4")
-video_preview_output_temp_dir = os.path.join(
-    folder_paths.get_output_directory(), "n-suite", ranstr, "videos")
-_resize_type = ["none", "width", "height"]
-_framerate = ["original", "half", "quarter"]
-_choice = ["Yes", "No"]
+def makedirs():
+    try:
+        os.makedirs(input_dir, exist_ok=True)
+        os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(temp_output_dir, exist_ok=True)
+        os.makedirs(videos_output_dir, exist_ok=True)
+        os.makedirs(frames_output_dir, exist_ok=True)
+    except:
+        pass
+makedirs()
 
-_my_p1 = os.path.join(
-    folder_paths.get_temp_directory(), "n-suite", ranstr)
-_my_p2 = os.path.join(
-    folder_paths.get_output_directory(), "n-suite", ranstr)
-
-try:
-    os.makedirs(_my_p1, exist_ok=True)
-    os.makedirs(_my_p2, exist_ok=True)
-    os.makedirs(input_dir, exist_ok=True)
-except:
-    pass
-try:
-    os.makedirs(output_dir)
-except:
-    pass
-
-try:
-    os.makedirs(temp_output_dir)
-except:
-    pass
-
-try:
-    os.makedirs(videos_output_dir)
-except:
-    pass
-
-try:
-    os.makedirs(frames_output_dir)
-except:
-    pass
-
-try:
-    os.makedirs(folder_paths.get_temp_directory())
-except:
-    pass
+def remove_(p:str):
+    if os.path.isfile(p):
+        os.remove(p)
+    else:
+        shutil.rmtree(p)
+        
+def removedirs():
+    try:
+        remove_(output_dir)
+        remove_(videos_output_dir)
+        remove_(temp_output_dir)
+        remove_(audios_output_temp_dir)
+        remove_(videos_output_temp_dir)
+        remove_(video_preview_output_temp_dir)
+    except:
+        pass
 
 
 def calc_resize_image(input_path, target_size, resize_by):
@@ -347,10 +339,11 @@ temp_dir = folder_paths.temp_directory
 
 class LoadVideoAdvanced:
     def __init__(self):
-        pass
+        makedirs()
 
     @classmethod
     def INPUT_TYPES(s):
+        makedirs()
         files = [f for f in os.listdir(input_dir) if os.path.isfile(
             os.path.join(input_dir, f))]
         return {"required": {"video": ("STRING", {"default": ""}),
@@ -395,11 +388,11 @@ class LoadVideoAdvanced:
             fps = int(cap.get(cv2.CAP_PROP_FPS))
             print(f"The video has {fps} frames per second.")
 
-        try:
-            shutil.rmtree(os.path.join(
-                temp_output_dir, video_path.split(".")[0]))
-        except:
-            print("Video Path already deleted")
+        # try:
+        #     shutil.rmtree(os.path.join(
+        #         temp_output_dir, video_path.split(".")[0]))
+        # except:
+        #     print("Video Path already deleted")
 
         full_temp_output_dir = os.path.join(
             temp_output_dir, video_path.split(".")[0])
@@ -647,7 +640,7 @@ class SaveVideo:
             if outpath:
                 video_clip.write_videofile(self.video_file_path)
                 file_name = self.video_filename
-                
+                removedirs()
                 
             else:
                 # delete all temporary files that start with video_preview
@@ -656,13 +649,10 @@ class SaveVideo:
                         os.remove(os.path.join(
                             video_preview_output_temp_dir, file))
                 # random number
-                suffix = str(random.randint(1, 100000))
+                suffix = uuid4().hex
                 file_name = f"video_preview_{suffix}.mp4"
                 video_clip.write_videofile(os.path.join(
                     video_preview_output_temp_dir, file_name))
-                
-            shutil.rmtree(_my_p2, ignore_errors=True)
-            shutil.rmtree(_my_p1, ignore_errors=True)
 
 
         return {"ui": {"text": [file_name], }}
@@ -720,6 +710,7 @@ class SetMetadata:
 
     @classmethod
     def INPUT_TYPES(s):
+        makedirs()
         return {"required": {"number_of_frames": ("INT",  {"default": 1, "min": 1, "step": 1}),
                              "fps": ("INT", {"default": 30, "min": 1, "step": 1}),
                              "VideoName": ("STRING",  {"default": "manual"})
