@@ -168,6 +168,7 @@ def removedirs():
         remove_(audios_output_temp_dir)
         remove_(videos_output_temp_dir)
         remove_(video_preview_output_temp_dir)
+        remove_(frames_output_dir)
     except:
         pass
 
